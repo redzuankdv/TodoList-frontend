@@ -8,6 +8,7 @@ function App() {
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const apiUrl = 'http://localhost:5026/todos';
 
@@ -22,13 +23,29 @@ function App() {
   };
 
   const addTodo = async () => {
-    if (!title.trim()) return;
+    setErrorMsg('');
 
-    await fetch(apiUrl, {
+    if (!title.trim()) {
+      setErrorMsg('Title is required.');
+      return;
+    }
+
+    if (!description.trim()) {
+      setErrorMsg('Description is required.');
+      return;
+    }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, description })
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      setErrorMsg(`Error adding todo: ${error}`);
+      return;
+    }
 
     setTitle('');
     setDescription('');
@@ -44,14 +61,33 @@ function App() {
     setEditId(todo.id);
     setEditTitle(todo.title);
     setEditDescription(todo.description);
+    setErrorMsg('');
   };
 
   const saveEdit = async (id) => {
-    await fetch(`${apiUrl}/${id}`, {
+    setErrorMsg('');
+
+    if (!editTitle.trim()) {
+      setErrorMsg('Title is required.');
+      return;
+    }
+
+    if (!editDescription.trim()) {
+      setErrorMsg('Description is required.');
+      return;
+    }
+
+    const response = await fetch(`${apiUrl}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: editTitle, description: editDescription })
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      setErrorMsg(`Error saving todo: ${error}`);
+      return;
+    }
 
     setEditId(null);
     fetchTodos();
@@ -60,6 +96,10 @@ function App() {
   return (
     <div className="container py-5">
       <h2 className="mb-4">📝 To-do List</h2>
+
+      {errorMsg && (
+        <div className="alert alert-danger">{errorMsg}</div>
+      )}
 
       <div className="mb-3">
         <input
